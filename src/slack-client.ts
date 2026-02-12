@@ -1,3 +1,5 @@
+import type { PostMessageOptions } from "./types.js";
+
 export class SlackClient {
   private botHeaders: { Authorization: string; "Content-Type": string };
 
@@ -64,14 +66,26 @@ export class SlackClient {
     };
   }
 
-  async postMessage(channel_id: string, text: string): Promise<any> {
+  async postMessage(opts: PostMessageOptions): Promise<any> {
+    const body: Record<string, unknown> = {
+      channel: opts.channel_id,
+      text: opts.text,
+    };
+
+    if (opts.thread_ts) body.thread_ts = opts.thread_ts;
+    if (opts.reply_broadcast) body.reply_broadcast = opts.reply_broadcast;
+    if (opts.username) body.username = opts.username;
+    if (opts.icon_emoji) body.icon_emoji = opts.icon_emoji;
+    if (opts.icon_url) body.icon_url = opts.icon_url;
+    if (opts.metadata) body.metadata = opts.metadata;
+    if (opts.unfurl_links !== undefined) body.unfurl_links = opts.unfurl_links;
+    if (opts.unfurl_media !== undefined) body.unfurl_media = opts.unfurl_media;
+    if (opts.blocks) body.blocks = opts.blocks;
+
     const response = await fetch("https://slack.com/api/chat.postMessage", {
       method: "POST",
       headers: this.botHeaders,
-      body: JSON.stringify({
-        channel: channel_id,
-        text: text,
-      }),
+      body: JSON.stringify(body),
     });
 
     return response.json();
@@ -81,18 +95,18 @@ export class SlackClient {
     channel_id: string,
     thread_ts: string,
     text: string,
+    username?: string,
+    icon_emoji?: string,
+    icon_url?: string,
   ): Promise<any> {
-    const response = await fetch("https://slack.com/api/chat.postMessage", {
-      method: "POST",
-      headers: this.botHeaders,
-      body: JSON.stringify({
-        channel: channel_id,
-        thread_ts: thread_ts,
-        text: text,
-      }),
+    return this.postMessage({
+      channel_id,
+      text,
+      thread_ts,
+      username,
+      icon_emoji,
+      icon_url,
     });
-
-    return response.json();
   }
 
   async addReaction(

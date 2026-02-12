@@ -1,21 +1,45 @@
 import type { PostMessageOptions } from "./types.js";
+import { SlackRateLimiter } from "./rate-limiter.js";
+import { fetchWithRetry } from "./network.js";
 
 export class SlackClient {
   private botHeaders: { Authorization: string; "Content-Type": string };
+  private rateLimiter: SlackRateLimiter;
 
   constructor(botToken: string) {
     this.botHeaders = {
       Authorization: `Bearer ${botToken}`,
       "Content-Type": "application/json",
     };
+    this.rateLimiter = new SlackRateLimiter();
+  }
+
+  private async apiCall(
+    method: string,
+    url: string,
+    options: RequestInit,
+    priority?: number,
+  ): Promise<any> {
+    return this.rateLimiter.enqueue(
+      method,
+      async () => {
+        const response = await fetchWithRetry(url, options);
+        const result = await response.json();
+        const retryAfter = response.headers.get("Retry-After");
+        if (retryAfter) {
+          result._retryAfter = retryAfter;
+        }
+        return result;
+      },
+      priority,
+    );
   }
 
   async authTest(): Promise<any> {
-    const response = await fetch("https://slack.com/api/auth.test", {
+    return this.apiCall("auth.test", "https://slack.com/api/auth.test", {
       method: "POST",
       headers: this.botHeaders,
     });
-    return response.json();
   }
 
   async getChannels(limit: number = 100, cursor?: string): Promise<any> {
@@ -32,12 +56,11 @@ export class SlackClient {
         params.append("cursor", cursor);
       }
 
-      const response = await fetch(
+      return this.apiCall(
+        "conversations.list",
         `https://slack.com/api/conversations.list?${params}`,
         { headers: this.botHeaders },
       );
-
-      return response.json();
     }
 
     const predefinedChannelIdsArray = predefinedChannelIds.split(",").map((id: string) => id.trim());
@@ -48,11 +71,11 @@ export class SlackClient {
         channel: channelId,
       });
 
-      const response = await fetch(
+      const data = await this.apiCall(
+        "conversations.info",
         `https://slack.com/api/conversations.info?${params}`,
-        { headers: this.botHeaders }
+        { headers: this.botHeaders },
       );
-      const data = await response.json();
 
       if (data.ok && data.channel && !data.channel.is_archived) {
         channels.push(data.channel);
@@ -66,7 +89,7 @@ export class SlackClient {
     };
   }
 
-  async postMessage(opts: PostMessageOptions): Promise<any> {
+  async postMessage(opts: PostMessageOptions, priority?: number): Promise<any> {
     const body: Record<string, unknown> = {
       channel: opts.channel_id,
       text: opts.text,
@@ -82,13 +105,16 @@ export class SlackClient {
     if (opts.unfurl_media !== undefined) body.unfurl_media = opts.unfurl_media;
     if (opts.blocks) body.blocks = opts.blocks;
 
-    const response = await fetch("https://slack.com/api/chat.postMessage", {
-      method: "POST",
-      headers: this.botHeaders,
-      body: JSON.stringify(body),
-    });
-
-    return response.json();
+    return this.apiCall(
+      "chat.postMessage",
+      "https://slack.com/api/chat.postMessage",
+      {
+        method: "POST",
+        headers: this.botHeaders,
+        body: JSON.stringify(body),
+      },
+      priority,
+    );
   }
 
   async postReply(
@@ -98,6 +124,7 @@ export class SlackClient {
     username?: string,
     icon_emoji?: string,
     icon_url?: string,
+    priority?: number,
   ): Promise<any> {
     return this.postMessage({
       channel_id,
@@ -106,7 +133,7 @@ export class SlackClient {
       username,
       icon_emoji,
       icon_url,
-    });
+    }, priority);
   }
 
   async addReaction(
@@ -114,17 +141,19 @@ export class SlackClient {
     timestamp: string,
     reaction: string,
   ): Promise<any> {
-    const response = await fetch("https://slack.com/api/reactions.add", {
-      method: "POST",
-      headers: this.botHeaders,
-      body: JSON.stringify({
-        channel: channel_id,
-        timestamp: timestamp,
-        name: reaction,
-      }),
-    });
-
-    return response.json();
+    return this.apiCall(
+      "reactions.add",
+      "https://slack.com/api/reactions.add",
+      {
+        method: "POST",
+        headers: this.botHeaders,
+        body: JSON.stringify({
+          channel: channel_id,
+          timestamp: timestamp,
+          name: reaction,
+        }),
+      },
+    );
   }
 
   async getChannelHistory(
@@ -136,12 +165,11 @@ export class SlackClient {
       limit: limit.toString(),
     });
 
-    const response = await fetch(
+    return this.apiCall(
+      "conversations.history",
       `https://slack.com/api/conversations.history?${params}`,
       { headers: this.botHeaders },
     );
-
-    return response.json();
   }
 
   async getThreadReplies(channel_id: string, thread_ts: string): Promise<any> {
@@ -150,12 +178,11 @@ export class SlackClient {
       ts: thread_ts,
     });
 
-    const response = await fetch(
+    return this.apiCall(
+      "conversations.replies",
       `https://slack.com/api/conversations.replies?${params}`,
       { headers: this.botHeaders },
     );
-
-    return response.json();
   }
 
   async getUsers(limit: number = 100, cursor?: string): Promise<any> {
@@ -168,11 +195,11 @@ export class SlackClient {
       params.append("cursor", cursor);
     }
 
-    const response = await fetch(`https://slack.com/api/users.list?${params}`, {
-      headers: this.botHeaders,
-    });
-
-    return response.json();
+    return this.apiCall(
+      "users.list",
+      `https://slack.com/api/users.list?${params}`,
+      { headers: this.botHeaders },
+    );
   }
 
   async getUserProfile(user_id: string): Promise<any> {
@@ -181,11 +208,10 @@ export class SlackClient {
       include_labels: "true",
     });
 
-    const response = await fetch(
+    return this.apiCall(
+      "users.profile.get",
       `https://slack.com/api/users.profile.get?${params}`,
       { headers: this.botHeaders },
     );
-
-    return response.json();
   }
 }

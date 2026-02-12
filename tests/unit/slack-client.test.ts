@@ -4,6 +4,16 @@ import { SlackClient } from "../../src/slack-client.js";
 const mockFetch = vi.fn();
 global.fetch = mockFetch as any;
 
+function mockResponse(body: any, headers: Record<string, string> = {}) {
+  return {
+    json: () => Promise.resolve(body),
+    status: 200,
+    headers: {
+      get: (name: string) => headers[name] ?? null,
+    },
+  };
+}
+
 describe("SlackClient", () => {
   let client: SlackClient;
   const originalEnv = { ...process.env };
@@ -19,9 +29,9 @@ describe("SlackClient", () => {
   });
 
   it("authTest calls auth.test endpoint", async () => {
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve({ ok: true, user: "testbot", team: "TestTeam" }),
-    });
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ ok: true, user: "testbot", team: "TestTeam" }),
+    );
 
     const result = await client.authTest();
 
@@ -39,9 +49,9 @@ describe("SlackClient", () => {
   });
 
   it("authTest returns error on invalid token", async () => {
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve({ ok: false, error: "invalid_auth" }),
-    });
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ ok: false, error: "invalid_auth" }),
+    );
 
     const result = await client.authTest();
 
@@ -51,19 +61,17 @@ describe("SlackClient", () => {
 
   it("getChannels without SLACK_CHANNEL_IDS calls conversations.list", async () => {
     delete process.env.SLACK_CHANNEL_IDS;
-    const mockResponse = {
+    const body = {
       ok: true,
       channels: [{ id: "C123", name: "general" }],
       response_metadata: { next_cursor: "" },
     };
 
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(mockResponse),
-    });
+    mockFetch.mockResolvedValueOnce(mockResponse(body));
 
     const result = await client.getChannels();
 
-    expect(result).toEqual(mockResponse);
+    expect(result).toEqual(body);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("https://slack.com/api/conversations.list"),
       expect.objectContaining({
@@ -79,20 +87,18 @@ describe("SlackClient", () => {
     process.env.SLACK_CHANNEL_IDS = "C123,C456";
 
     mockFetch
-      .mockResolvedValueOnce({
-        json: () =>
-          Promise.resolve({
-            ok: true,
-            channel: { id: "C123", name: "general", is_archived: false },
-          }),
-      })
-      .mockResolvedValueOnce({
-        json: () =>
-          Promise.resolve({
-            ok: true,
-            channel: { id: "C456", name: "random", is_archived: false },
-          }),
-      });
+      .mockResolvedValueOnce(
+        mockResponse({
+          ok: true,
+          channel: { id: "C123", name: "general", is_archived: false },
+        }),
+      )
+      .mockResolvedValueOnce(
+        mockResponse({
+          ok: true,
+          channel: { id: "C456", name: "random", is_archived: false },
+        }),
+      );
 
     const result = await client.getChannels();
 
@@ -108,14 +114,12 @@ describe("SlackClient", () => {
   });
 
   it("postMessage sends correct body with options object", async () => {
-    const mockResponse = { ok: true, ts: "1234567890.123456" };
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(mockResponse),
-    });
+    const body = { ok: true, ts: "1234567890.123456" };
+    mockFetch.mockResolvedValueOnce(mockResponse(body));
 
     const result = await client.postMessage({ channel_id: "C123", text: "Hello" });
 
-    expect(result).toEqual(mockResponse);
+    expect(result).toEqual(body);
     expect(mockFetch).toHaveBeenCalledWith(
       "https://slack.com/api/chat.postMessage",
       {
@@ -130,9 +134,9 @@ describe("SlackClient", () => {
   });
 
   it("postMessage includes identity fields when provided", async () => {
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve({ ok: true, ts: "123" }),
-    });
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ ok: true, ts: "123" }),
+    );
 
     await client.postMessage({
       channel_id: "C123",
@@ -147,9 +151,9 @@ describe("SlackClient", () => {
   });
 
   it("postMessage omits identity fields when not provided", async () => {
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve({ ok: true, ts: "123" }),
-    });
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ ok: true, ts: "123" }),
+    );
 
     await client.postMessage({ channel_id: "C123", text: "Hello" });
 
@@ -160,14 +164,12 @@ describe("SlackClient", () => {
   });
 
   it("postReply delegates to postMessage with thread_ts", async () => {
-    const mockResponse = { ok: true, ts: "1234567890.123457" };
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(mockResponse),
-    });
+    const body = { ok: true, ts: "1234567890.123457" };
+    mockFetch.mockResolvedValueOnce(mockResponse(body));
 
     const result = await client.postReply("C123", "1234567890.123456", "Reply");
 
-    expect(result).toEqual(mockResponse);
+    expect(result).toEqual(body);
     expect(mockFetch).toHaveBeenCalledWith(
       "https://slack.com/api/chat.postMessage",
       {
@@ -186,9 +188,7 @@ describe("SlackClient", () => {
   });
 
   it("addReaction sends correct body", async () => {
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve({ ok: true }),
-    });
+    mockFetch.mockResolvedValueOnce(mockResponse({ ok: true }));
 
     const result = await client.addReaction("C123", "1234567890.123456", "thumbsup");
 
@@ -211,14 +211,12 @@ describe("SlackClient", () => {
   });
 
   it("getChannelHistory calls correct URL", async () => {
-    const mockResponse = { ok: true, messages: [{ text: "Hi", ts: "123" }] };
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(mockResponse),
-    });
+    const body = { ok: true, messages: [{ text: "Hi", ts: "123" }] };
+    mockFetch.mockResolvedValueOnce(mockResponse(body));
 
     const result = await client.getChannelHistory("C123", 5);
 
-    expect(result).toEqual(mockResponse);
+    expect(result).toEqual(body);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("https://slack.com/api/conversations.history"),
       expect.objectContaining({
@@ -231,20 +229,18 @@ describe("SlackClient", () => {
   });
 
   it("getThreadReplies calls correct URL", async () => {
-    const mockResponse = {
+    const body = {
       ok: true,
       messages: [
         { text: "Parent", ts: "1234567890.123456" },
         { text: "Reply", ts: "1234567890.123457", thread_ts: "1234567890.123456" },
       ],
     };
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(mockResponse),
-    });
+    mockFetch.mockResolvedValueOnce(mockResponse(body));
 
     const result = await client.getThreadReplies("C123", "1234567890.123456");
 
-    expect(result).toEqual(mockResponse);
+    expect(result).toEqual(body);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("https://slack.com/api/conversations.replies"),
       expect.objectContaining({
@@ -257,17 +253,15 @@ describe("SlackClient", () => {
   });
 
   it("getUsers calls correct URL", async () => {
-    const mockResponse = {
+    const body = {
       ok: true,
       members: [{ id: "U123", name: "testuser" }],
     };
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(mockResponse),
-    });
+    mockFetch.mockResolvedValueOnce(mockResponse(body));
 
     const result = await client.getUsers(100);
 
-    expect(result).toEqual(mockResponse);
+    expect(result).toEqual(body);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("https://slack.com/api/users.list"),
       expect.objectContaining({
@@ -280,17 +274,15 @@ describe("SlackClient", () => {
   });
 
   it("getUserProfile calls correct URL", async () => {
-    const mockResponse = {
+    const body = {
       ok: true,
       profile: { real_name: "Test User", email: "test@example.com" },
     };
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(mockResponse),
-    });
+    mockFetch.mockResolvedValueOnce(mockResponse(body));
 
     const result = await client.getUserProfile("U123");
 
-    expect(result).toEqual(mockResponse);
+    expect(result).toEqual(body);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("https://slack.com/api/users.profile.get"),
       expect.objectContaining({

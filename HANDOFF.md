@@ -24,6 +24,9 @@
 | DD-010 | Decision | Queue delay warning logs to stderr (not returned as tool content) per ROADMAP | 3 | Accepted |
 | DD-011 | Decision | fetchWithRetry maxRetries defaults to 3 (spec says 5, reduced for MCP latency) | 3 | Accepted |
 | DD-012 | Decision | _retryAfter attached to parsed JSON response for rate limiter 429 detection | 3 | Accepted |
+| DD-013 | Decision | searchMessages takes userToken as parameter (not stored on class) — Phase 6 will wire SLACK_USER_TOKEN env var | 4 | Accepted |
+| DD-014 | Decision | slack_update_message description is generic ("Edit an existing message"), no protocol references | 4 | Accepted |
+| DD-015 | Decision | slack_create_channel bypasses SLACK_CHANNEL_IDS allow-list (channel creation is not constrained by it) | 4 | Accepted |
 
 ## Deferred Issues
 | Issue | Assigned Phase | What Breaks |
@@ -49,3 +52,7 @@
 | 3-shorten | 1ae5dfc | — |
 | 3-docs | 634722e | — |
 | 3 | — | v0.1.0-phase-3 |
+| 4-w1 | 0857c8c | — |
+| 4-w2 | cade39e | — |
+| 4-w3 | e210c45 | — |
+| 4-shorten | 1c22d45 | — |

@@ -2,12 +2,13 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { SlackClient } from "../slack-client.js";
 import { resolveIdentity } from "../identity.js";
-import type { AgentConfig } from "../types.js";
+import type { AgentConfig, UpdateMessageOptions } from "../types.js";
 
 export function registerMessageTools(
   server: McpServer,
   client: SlackClient,
   config: AgentConfig | null = null,
+  userToken?: string,
 ): void {
   server.registerTool(
     "slack_post_message",
@@ -108,6 +109,60 @@ export function registerMessageTools(
     },
     async ({ channel_id, thread_ts }) => {
       const response = await client.getThreadReplies(channel_id, thread_ts);
+      return {
+        content: [{ type: "text", text: JSON.stringify(response) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "slack_update_message",
+    {
+      title: "Update Slack Message",
+      description: "Edit an existing message",
+      inputSchema: {
+        channel_id: z.string().describe("Channel ID containing the message"),
+        timestamp: z.string().describe("Timestamp (ts) of the message to update"),
+        text: z.string().describe("New message text (replaces entire message text)"),
+        blocks: z.string().optional().describe("JSON string of updated Block Kit blocks array"),
+        metadata_event_type: z.string().optional().describe("Updated metadata event type"),
+        metadata_payload: z.string().optional().describe("JSON string of updated metadata event payload"),
+      },
+    },
+    async (args) => {
+      const metadata = args.metadata_event_type ? {
+        event_type: args.metadata_event_type,
+        event_payload: JSON.parse(args.metadata_payload || '{}'),
+      } : undefined;
+
+      const response = await client.updateMessage({
+        channel_id: args.channel_id,
+        timestamp: args.timestamp,
+        text: args.text,
+        blocks: args.blocks ? JSON.parse(args.blocks) : undefined,
+        metadata,
+      });
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(response) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "slack_search_messages",
+    {
+      title: "Search Slack Messages",
+      description: "Search for messages matching a query. Requires SLACK_USER_TOKEN to be configured.",
+      inputSchema: {
+        query: z.string().describe("Search query (supports Slack search modifiers like 'in:#channel', 'from:@user', 'after:2026-01-01')"),
+        sort: z.enum(["score", "timestamp"]).optional().default("timestamp").describe("Sort order"),
+        sort_dir: z.enum(["asc", "desc"]).optional().default("desc").describe("Sort direction"),
+        count: z.number().optional().default(20).describe("Number of results (max 100)"),
+      },
+    },
+    async ({ query, sort, sort_dir, count }) => {
+      const response = await client.searchMessages(query, sort, sort_dir, Math.min(count, 100), userToken);
       return {
         content: [{ type: "text", text: JSON.stringify(response) }],
       };

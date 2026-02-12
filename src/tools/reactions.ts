@@ -21,4 +21,23 @@ export function registerReactionTools(server: McpServer, client: SlackClient): v
       };
     }
   );
+
+  server.registerTool(
+    "slack_remove_reaction",
+    {
+      title: "Remove Slack Reaction",
+      description: "Remove an emoji reaction from a message",
+      inputSchema: {
+        channel_id: z.string().describe("Channel ID containing the message"),
+        timestamp: z.string().describe("Message timestamp"),
+        reaction: z.string().describe("Emoji name (without colons)"),
+      },
+    },
+    async ({ channel_id, timestamp, reaction }) => {
+      const response = await client.removeReaction(channel_id, timestamp, reaction);
+      return {
+        content: [{ type: "text", text: JSON.stringify(response) }],
+      };
+    }
+  );
 }

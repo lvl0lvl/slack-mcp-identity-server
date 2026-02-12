@@ -11,32 +11,34 @@ import { loadAgentConfig } from "./identity.js";
 import { registerChannelTools } from "./tools/channels.js";
 import { registerMessageTools } from "./tools/messages.js";
 import { registerReactionTools } from "./tools/reactions.js";
+import { registerPinTools } from "./tools/pins.js";
 import { registerUserTools } from "./tools/users.js";
 import type { AgentConfig } from "./types.js";
 
-export function createSlackServer(slackClient: SlackClient, agentConfig: AgentConfig | null = null): McpServer {
+export function createSlackServer(slackClient: SlackClient, agentConfig: AgentConfig | null = null, userToken?: string): McpServer {
   const server = new McpServer({
     name: "Slack MCP Server",
     version: "1.0.0",
   });
 
   registerChannelTools(server, slackClient);
-  registerMessageTools(server, slackClient, agentConfig);
+  registerMessageTools(server, slackClient, agentConfig, userToken);
+  registerPinTools(server, slackClient);
   registerReactionTools(server, slackClient);
   registerUserTools(server, slackClient);
 
   return server;
 }
 
-async function runStdioServer(slackClient: SlackClient, agentConfig: AgentConfig | null) {
+async function runStdioServer(slackClient: SlackClient, agentConfig: AgentConfig | null, userToken?: string) {
   console.error("Starting Slack MCP Server with stdio transport...");
-  const server = createSlackServer(slackClient, agentConfig);
+  const server = createSlackServer(slackClient, agentConfig, userToken);
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Slack MCP Server running on stdio");
 }
 
-async function runHttpServer(slackClient: SlackClient, port: number = 3000, authToken?: string, agentConfig: AgentConfig | null = null) {
+async function runHttpServer(slackClient: SlackClient, port: number = 3000, authToken?: string, agentConfig: AgentConfig | null = null, userToken?: string) {
   console.error(`Starting Slack MCP Server with Streamable HTTP transport on port ${port}...`);
 
   const { default: express } = await import("express");
@@ -98,7 +100,7 @@ async function runHttpServer(slackClient: SlackClient, port: number = 3000, auth
           }
         };
 
-        const server = createSlackServer(slackClient, agentConfig);
+        const server = createSlackServer(slackClient, agentConfig, userToken);
         await server.connect(transport);
       } else {
         res.status(400).json({
@@ -243,6 +245,8 @@ export async function main() {
     console.error(`Agent identity config loaded with ${Object.keys(agentConfig.agents).length} agent(s)`);
   }
 
+  const userToken = process.env.SLACK_USER_TOKEN;
+
   let httpServer: any = null;
 
   const setupGracefulShutdown = () => {
@@ -272,7 +276,7 @@ export async function main() {
   setupGracefulShutdown();
 
   if (transport === 'stdio') {
-    await runStdioServer(slackClient, agentConfig);
+    await runStdioServer(slackClient, agentConfig, userToken);
   } else if (transport === 'http') {
     let finalAuthToken = authToken || process.env.AUTH_TOKEN;
     if (!finalAuthToken) {
@@ -285,7 +289,7 @@ export async function main() {
       console.error('Using auth token from AUTH_TOKEN environment variable');
     }
 
-    httpServer = await runHttpServer(slackClient, port, finalAuthToken, agentConfig);
+    httpServer = await runHttpServer(slackClient, port, finalAuthToken, agentConfig, userToken);
   }
 }
 

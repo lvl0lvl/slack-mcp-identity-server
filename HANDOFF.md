@@ -27,6 +27,10 @@
 | DD-013 | Decision | searchMessages takes userToken as parameter (not stored on class) — Phase 6 will wire SLACK_USER_TOKEN env var | 4 | Accepted |
 | DD-014 | Decision | slack_update_message description is generic ("Edit an existing message"), no protocol references | 4 | Accepted |
 | DD-015 | Decision | slack_create_channel bypasses SLACK_CHANNEL_IDS allow-list (channel creation is not constrained by it) | 4 | Accepted |
+| DD-016 | Decision | MessageLogger disabled by default (no file created when SLACK_MESSAGE_LOG unset), no log rotation | 5 | Accepted |
+| DD-017 | Decision | Logger injected into SlackClient via constructor (optional, defaults to no-op) for testability | 5 | Accepted |
+| DD-018 | Decision | Logging happens in postMessage only (postReply delegates to postMessage, so both are captured) | 5 | Accepted |
+| DD-019 | Decision | Log entries use username/icon_emoji from PostMessageOptions (resolved identity), not raw agent_id | 5 | Accepted |
 
 ## Deferred Issues
 | Issue | Assigned Phase | What Breaks |
@@ -57,3 +61,7 @@
 | 4-w3 | e210c45 | — |
 | 4-shorten | 1c22d45 | — |
 | 4 | — | v0.1.0-phase-4 |
+| 5-w1 | 31cd4d1 | — |
+| 5-w2 | c2bb653 | — |
+| 5-w3 | 8d8c0f7 | — |
+| 5-review | 0ba50e2 | — |

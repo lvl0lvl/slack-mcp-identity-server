@@ -19,6 +19,11 @@
 | DD-005 | Decision | resolveIdentity takes config as parameter (not module state) for testability | 2 | Accepted |
 | DD-006 | Decision | PostMessageOptions includes full spec fields (unfurl, blocks, metadata) for forward compatibility | 2 | Accepted |
 | DD-007 | Decision | postReply delegates to postMessage with thread_ts (removes duplicate fetch call) | 2 | Accepted |
+| DD-008 | Decision | SlackRateLimiter created internally by SlackClient (not injected) for simplicity | 3 | Accepted |
+| DD-009 | Decision | METHOD_LIMITS simplified to Record<string, number> (was Record<string, {perMinute: number}>) | 3 | Accepted |
+| DD-010 | Decision | Queue delay warning logs to stderr (not returned as tool content) per ROADMAP | 3 | Accepted |
+| DD-011 | Decision | fetchWithRetry maxRetries defaults to 3 (spec says 5, reduced for MCP latency) | 3 | Accepted |
+| DD-012 | Decision | _retryAfter attached to parsed JSON response for rate limiter 429 detection | 3 | Accepted |
 
 ## Deferred Issues
 | Issue | Assigned Phase | What Breaks |
@@ -38,3 +43,8 @@
 | 2-shorten | 5589d5e | — |
 | 2-review | 7c5d37d | — |
 | 2 | — | v0.1.0-phase-2 |
+| 3-w1 | ed6c972 | — |
+| 3-w2 | 7d379d4 | — |
+| 3-w3 | f88e5e5 | — |
+| 3-shorten | 1ae5dfc | — |
+| 3-docs | 634722e | — |

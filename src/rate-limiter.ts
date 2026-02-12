@@ -8,30 +8,31 @@ interface QueuedRequest {
 }
 
 export class SlackRateLimiter {
-  private methodWindows: Map<string, { timestamps: number[] }> = new Map();
+  private methodWindows: Map<string, number[]> = new Map();
   private queue: QueuedRequest[] = [];
   private processing = false;
   private retryAfter: number = 0;
 
-  private readonly METHOD_LIMITS: Record<string, { perMinute: number }> = {
-    'chat.postMessage': { perMinute: 300 },
-    'chat.update': { perMinute: 50 },
-    'conversations.list': { perMinute: 20 },
-    'conversations.info': { perMinute: 20 },
-    'conversations.create': { perMinute: 20 },
-    'conversations.history': { perMinute: 50 },
-    'conversations.replies': { perMinute: 50 },
-    'conversations.setTopic': { perMinute: 20 },
-    'conversations.setPurpose': { perMinute: 20 },
-    'conversations.archive': { perMinute: 20 },
-    'reactions.add': { perMinute: 20 },
-    'reactions.remove': { perMinute: 20 },
-    'search.messages': { perMinute: 20 },
-    'pins.add': { perMinute: 20 },
-    'pins.remove': { perMinute: 20 },
-    'users.list': { perMinute: 20 },
-    'users.profile.get': { perMinute: 100 },
-    'auth.test': { perMinute: 100 },
+  /** Per-method rate limits (requests per minute). */
+  private readonly METHOD_LIMITS: Record<string, number> = {
+    'chat.postMessage': 300,
+    'chat.update': 50,
+    'conversations.list': 20,
+    'conversations.info': 20,
+    'conversations.create': 20,
+    'conversations.history': 50,
+    'conversations.replies': 50,
+    'conversations.setTopic': 20,
+    'conversations.setPurpose': 20,
+    'conversations.archive': 20,
+    'reactions.add': 20,
+    'reactions.remove': 20,
+    'search.messages': 20,
+    'pins.add': 20,
+    'pins.remove': 20,
+    'users.list': 20,
+    'users.profile.get': 100,
+    'auth.test': 100,
   };
 
   async enqueue<T>(
@@ -74,7 +75,7 @@ export class SlackRateLimiter {
 
       const limit = this.METHOD_LIMITS[item.method];
 
-      if (limit && !this.canProceed(item.method, limit.perMinute)) {
+      if (limit && !this.canProceed(item.method, limit)) {
         await this.sleep(this.getWaitTime(item.method));
         continue;
       }
@@ -103,28 +104,26 @@ export class SlackRateLimiter {
   }
 
   private canProceed(method: string, perMinute: number): boolean {
-    const window = this.methodWindows.get(method);
-    if (!window) return true;
-    const now = Date.now();
-    const windowStart = now - 60_000;
-    const recentRequests = window.timestamps.filter(t => t > windowStart);
-    return recentRequests.length < perMinute;
+    const timestamps = this.methodWindows.get(method);
+    if (!timestamps) return true;
+    const windowStart = Date.now() - 60_000;
+    return timestamps.filter(t => t > windowStart).length < perMinute;
   }
 
   private recordRequest(method: string): void {
     if (!this.methodWindows.has(method)) {
-      this.methodWindows.set(method, { timestamps: [] });
+      this.methodWindows.set(method, []);
     }
-    const window = this.methodWindows.get(method)!;
-    window.timestamps.push(Date.now());
+    const timestamps = this.methodWindows.get(method)!;
+    timestamps.push(Date.now());
     const cutoff = Date.now() - 60_000;
-    window.timestamps = window.timestamps.filter(t => t > cutoff);
+    this.methodWindows.set(method, timestamps.filter(t => t > cutoff));
   }
 
   private getWaitTime(method: string): number {
-    const window = this.methodWindows.get(method);
-    if (!window || window.timestamps.length === 0) return 0;
-    const oldest = Math.min(...window.timestamps);
+    const timestamps = this.methodWindows.get(method);
+    if (!timestamps || timestamps.length === 0) return 0;
+    const oldest = Math.min(...timestamps);
     return Math.max(0, oldest + 60_000 - Date.now() + 100);
   }
 

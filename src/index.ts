@@ -41,7 +41,6 @@ async function runHttpServer(slackClient: SlackClient, port: number = 3000, auth
   const app = express();
   app.use(express.json());
 
-  // Authorization middleware
   const authMiddleware = (req: any, res: any, next: any) => {
     if (!authToken) {
       return next();
@@ -210,9 +209,8 @@ export async function main() {
   const { transport, port, authToken } = parseArgs();
 
   const botToken = process.env.SLACK_BOT_TOKEN;
-  const teamId = process.env.SLACK_TEAM_ID;
 
-  if (!botToken || !teamId) {
+  if (!botToken || !process.env.SLACK_TEAM_ID) {
     console.error(
       "Please set SLACK_BOT_TOKEN and SLACK_TEAM_ID environment variables",
     );
@@ -221,7 +219,6 @@ export async function main() {
 
   const slackClient = new SlackClient(botToken);
 
-  // Validate bot token via auth.test
   try {
     const authResult = await slackClient.authTest();
     if (authResult.ok) {
@@ -281,7 +278,6 @@ export async function main() {
   }
 }
 
-// Auto-run when executed directly
 if (import.meta.url.startsWith('file://')) {
   const currentFile = fileURLToPath(import.meta.url);
   const executedFile = process.argv[1] ? resolve(process.argv[1]) : '';

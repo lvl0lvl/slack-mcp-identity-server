@@ -13,7 +13,12 @@ export function loadAgentConfig(): AgentConfig | null {
     return null;
   }
 
-  const config = JSON.parse(raw) as AgentConfig;
+  let config: AgentConfig;
+  try {
+    config = JSON.parse(raw) as AgentConfig;
+  } catch {
+    throw new Error(`Invalid agent config: ${configPath} is not valid JSON`);
+  }
 
   if (config.version !== "1.0") {
     throw new Error(`Invalid agent config: expected version "1.0", got "${config.version}"`);

@@ -1,17 +1,20 @@
 import type { PostMessageOptions, UpdateMessageOptions } from "./types.js";
 import { SlackRateLimiter } from "./rate-limiter.js";
 import { fetchWithRetry } from "./network.js";
+import { MessageLogger } from "./message-logger.js";
 
 export class SlackClient {
   private botHeaders: { Authorization: string; "Content-Type": string };
   private rateLimiter: SlackRateLimiter;
+  private logger: MessageLogger;
 
-  constructor(botToken: string) {
+  constructor(botToken: string, logger?: MessageLogger) {
     this.botHeaders = {
       Authorization: `Bearer ${botToken}`,
       "Content-Type": "application/json",
     };
     this.rateLimiter = new SlackRateLimiter();
+    this.logger = logger ?? new MessageLogger();
   }
 
   private async apiCall(
@@ -105,7 +108,7 @@ export class SlackClient {
     if (opts.unfurl_media !== undefined) body.unfurl_media = opts.unfurl_media;
     if (opts.blocks) body.blocks = opts.blocks;
 
-    return this.apiCall(
+    const result = await this.apiCall(
       "chat.postMessage",
       "https://slack.com/api/chat.postMessage",
       {
@@ -115,6 +118,20 @@ export class SlackClient {
       },
       priority,
     );
+
+    this.logger.log({
+      timestamp: new Date().toISOString(),
+      channel: opts.channel_id,
+      username: opts.username,
+      icon_emoji: opts.icon_emoji,
+      text: opts.text,
+      thread_ts: opts.thread_ts,
+      slack_ts: result.ts,
+      delivered: result.ok === true,
+      error: result.ok ? undefined : result.error,
+    });
+
+    return result;
   }
 
   async postReply(

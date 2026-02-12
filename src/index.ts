@@ -8,6 +8,7 @@ import { resolve } from "node:path";
 
 import { SlackClient } from "./slack-client.js";
 import { loadAgentConfig } from "./identity.js";
+import { MessageLogger } from "./message-logger.js";
 import { registerChannelTools } from "./tools/channels.js";
 import { registerMessageTools } from "./tools/messages.js";
 import { registerReactionTools } from "./tools/reactions.js";
@@ -222,7 +223,13 @@ export async function main() {
     process.exit(1);
   }
 
-  const slackClient = new SlackClient(botToken);
+  const messageLogPath = process.env.SLACK_MESSAGE_LOG;
+  const logger = new MessageLogger(messageLogPath);
+  if (messageLogPath) {
+    console.error(`Message logging enabled: ${messageLogPath}`);
+  }
+
+  const slackClient = new SlackClient(botToken, logger);
 
   try {
     const authResult = await slackClient.authTest();

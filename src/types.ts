@@ -69,3 +69,14 @@ export interface PostMessageOptions {
   unfurl_media?: boolean;
   blocks?: unknown[];
 }
+
+export interface UpdateMessageOptions {
+  channel_id: string;
+  timestamp: string;
+  text: string;
+  blocks?: unknown[];
+  metadata?: {
+    event_type: string;
+    event_payload: Record<string, unknown>;
+  };
+}

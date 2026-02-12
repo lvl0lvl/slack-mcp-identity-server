@@ -1,4 +1,4 @@
-import type { PostMessageOptions } from "./types.js";
+import type { PostMessageOptions, UpdateMessageOptions } from "./types.js";
 import { SlackRateLimiter } from "./rate-limiter.js";
 import { fetchWithRetry } from "./network.js";
 
@@ -212,6 +212,163 @@ export class SlackClient {
       "users.profile.get",
       `https://slack.com/api/users.profile.get?${params}`,
       { headers: this.botHeaders },
+    );
+  }
+
+  async updateMessage(opts: UpdateMessageOptions): Promise<any> {
+    const body: Record<string, unknown> = {
+      channel: opts.channel_id,
+      ts: opts.timestamp,
+      text: opts.text,
+    };
+
+    if (opts.blocks) body.blocks = opts.blocks;
+    if (opts.metadata) body.metadata = opts.metadata;
+
+    return this.apiCall(
+      "chat.update",
+      "https://slack.com/api/chat.update",
+      {
+        method: "POST",
+        headers: this.botHeaders,
+        body: JSON.stringify(body),
+      },
+    );
+  }
+
+  async createChannel(name: string, isPrivate: boolean = false): Promise<any> {
+    return this.apiCall(
+      "conversations.create",
+      "https://slack.com/api/conversations.create",
+      {
+        method: "POST",
+        headers: this.botHeaders,
+        body: JSON.stringify({
+          name,
+          is_private: isPrivate,
+          team_id: process.env.SLACK_TEAM_ID!,
+        }),
+      },
+    );
+  }
+
+  async archiveChannel(channel_id: string): Promise<any> {
+    return this.apiCall(
+      "conversations.archive",
+      "https://slack.com/api/conversations.archive",
+      {
+        method: "POST",
+        headers: this.botHeaders,
+        body: JSON.stringify({ channel: channel_id }),
+      },
+    );
+  }
+
+  async setChannelTopic(channel_id: string, topic: string): Promise<any> {
+    return this.apiCall(
+      "conversations.setTopic",
+      "https://slack.com/api/conversations.setTopic",
+      {
+        method: "POST",
+        headers: this.botHeaders,
+        body: JSON.stringify({ channel: channel_id, topic }),
+      },
+    );
+  }
+
+  async setChannelPurpose(channel_id: string, purpose: string): Promise<any> {
+    return this.apiCall(
+      "conversations.setPurpose",
+      "https://slack.com/api/conversations.setPurpose",
+      {
+        method: "POST",
+        headers: this.botHeaders,
+        body: JSON.stringify({ channel: channel_id, purpose }),
+      },
+    );
+  }
+
+  async removeReaction(
+    channel_id: string,
+    timestamp: string,
+    reaction: string,
+  ): Promise<any> {
+    return this.apiCall(
+      "reactions.remove",
+      "https://slack.com/api/reactions.remove",
+      {
+        method: "POST",
+        headers: this.botHeaders,
+        body: JSON.stringify({
+          channel: channel_id,
+          timestamp: timestamp,
+          name: reaction,
+        }),
+      },
+    );
+  }
+
+  async pinMessage(channel_id: string, timestamp: string): Promise<any> {
+    return this.apiCall(
+      "pins.add",
+      "https://slack.com/api/pins.add",
+      {
+        method: "POST",
+        headers: this.botHeaders,
+        body: JSON.stringify({
+          channel: channel_id,
+          timestamp,
+        }),
+      },
+    );
+  }
+
+  async unpinMessage(channel_id: string, timestamp: string): Promise<any> {
+    return this.apiCall(
+      "pins.remove",
+      "https://slack.com/api/pins.remove",
+      {
+        method: "POST",
+        headers: this.botHeaders,
+        body: JSON.stringify({
+          channel: channel_id,
+          timestamp,
+        }),
+      },
+    );
+  }
+
+  async searchMessages(
+    query: string,
+    sort: string = "timestamp",
+    sort_dir: string = "desc",
+    count: number = 20,
+    userToken?: string,
+  ): Promise<any> {
+    if (!userToken) {
+      return {
+        ok: false,
+        error: "user_token_required",
+        message: "slack_search_messages requires SLACK_USER_TOKEN to be configured. The search.messages API only works with user tokens (xoxp-), not bot tokens.",
+      };
+    }
+
+    const params = new URLSearchParams({
+      query,
+      sort,
+      sort_dir,
+      count: Math.min(count, 100).toString(),
+    });
+
+    return this.apiCall(
+      "search.messages",
+      `https://slack.com/api/search.messages?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+          "Content-Type": "application/json",
+        },
+      },
     );
   }
 }

@@ -107,13 +107,13 @@ describe("SlackClient", () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
-  it("postMessage sends correct body", async () => {
+  it("postMessage sends correct body with options object", async () => {
     const mockResponse = { ok: true, ts: "1234567890.123456" };
     mockFetch.mockResolvedValueOnce({
       json: () => Promise.resolve(mockResponse),
     });
 
-    const result = await client.postMessage("C123", "Hello");
+    const result = await client.postMessage({ channel_id: "C123", text: "Hello" });
 
     expect(result).toEqual(mockResponse);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -129,7 +129,37 @@ describe("SlackClient", () => {
     );
   });
 
-  it("postReply sends correct body with thread_ts", async () => {
+  it("postMessage includes identity fields when provided", async () => {
+    mockFetch.mockResolvedValueOnce({
+      json: () => Promise.resolve({ ok: true, ts: "123" }),
+    });
+
+    await client.postMessage({
+      channel_id: "C123",
+      text: "Hello",
+      username: "Agent Alpha",
+      icon_emoji: ":star:",
+    });
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.username).toBe("Agent Alpha");
+    expect(body.icon_emoji).toBe(":star:");
+  });
+
+  it("postMessage omits identity fields when not provided", async () => {
+    mockFetch.mockResolvedValueOnce({
+      json: () => Promise.resolve({ ok: true, ts: "123" }),
+    });
+
+    await client.postMessage({ channel_id: "C123", text: "Hello" });
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body).not.toHaveProperty("username");
+    expect(body).not.toHaveProperty("icon_emoji");
+    expect(body).not.toHaveProperty("icon_url");
+  });
+
+  it("postReply delegates to postMessage with thread_ts", async () => {
     const mockResponse = { ok: true, ts: "1234567890.123457" };
     mockFetch.mockResolvedValueOnce({
       json: () => Promise.resolve(mockResponse),
@@ -148,8 +178,8 @@ describe("SlackClient", () => {
         },
         body: JSON.stringify({
           channel: "C123",
-          thread_ts: "1234567890.123456",
           text: "Reply",
+          thread_ts: "1234567890.123456",
         }),
       },
     );

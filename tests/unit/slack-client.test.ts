@@ -293,4 +293,51 @@ describe("SlackClient", () => {
       }),
     );
   });
+
+  describe("searchMessages", () => {
+    it("returns error when no user token provided", async () => {
+      const result = await client.searchMessages("test query");
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toBe("user_token_required");
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it("uses user token in Authorization header", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockResponse({ ok: true, messages: { matches: [] } }),
+      );
+
+      await client.searchMessages("query", "timestamp", "desc", 20, "xoxp-test-user");
+
+      const headers = mockFetch.mock.calls[0][1].headers;
+      expect(headers.Authorization).toBe("Bearer xoxp-test-user");
+      expect(headers.Authorization).not.toContain("xoxb-test-token");
+    });
+
+    it("sends correct query params", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockResponse({ ok: true, messages: { matches: [] } }),
+      );
+
+      await client.searchMessages("test query", "score", "asc", 50, "xoxp-test-user");
+
+      const url = mockFetch.mock.calls[0][0];
+      expect(url).toContain("https://slack.com/api/search.messages");
+      expect(url).toContain("sort=score");
+      expect(url).toContain("sort_dir=asc");
+      expect(url).toContain("count=50");
+    });
+
+    it("caps count at 100", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockResponse({ ok: true, messages: { matches: [] } }),
+      );
+
+      await client.searchMessages("query", "timestamp", "desc", 200, "xoxp-test-user");
+
+      const url = mockFetch.mock.calls[0][0];
+      expect(url).toContain("count=100");
+    });
+  });
 });

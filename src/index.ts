@@ -192,6 +192,8 @@ Environment Variables:
   SLACK_TEAM_ID          Workspace ID — required
   SLACK_CHANNEL_IDS      Comma-separated channel IDs to restrict access (optional)
   SLACK_AGENT_CONFIG_PATH  Path to agent identity JSON config file (optional)
+  SLACK_USER_TOKEN       User token (xoxp-) for search.messages (optional)
+  SLACK_MESSAGE_LOG      Path to JSONL message log file (optional, disabled if unset)
   AUTH_TOKEN             Bearer token for HTTP authorization (fallback if --token not provided)
 `);
       process.exit(0);

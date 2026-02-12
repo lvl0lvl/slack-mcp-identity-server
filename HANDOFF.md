@@ -32,6 +32,9 @@
 | DD-018 | Decision | Logging happens in postMessage only (postReply delegates to postMessage, so both are captured) | 5 | Accepted |
 | DD-019 | Decision | Log entries use username/icon_emoji from PostMessageOptions (resolved identity), not raw agent_id | 5 | Accepted |
 | DD-020 | Decision | Kept DD-013 per-call userToken approach (no constructor change). SLACK_USER_TOKEN wiring already done in Phase 5. Phase 6 adds test coverage only. | 6 | Accepted |
+| DD-021 | Decision | README rewritten from scratch (upstream README replaced) with all 10 sections from build plan Section 10 | 7 | Accepted |
+| DD-022 | Decision | package.json files field updated to include config/, README.md, LICENSE, CHANGELOG.md for clean tarball | 7 | Accepted |
+| DD-023 | Decision | Hashbang already present from Phase 1 (src/index.ts line 1), preserved in dist/index.js by TypeScript compiler | 7 | Accepted |
 
 ## Deferred Issues
 | Issue | Assigned Phase | What Breaks |

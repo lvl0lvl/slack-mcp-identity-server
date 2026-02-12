@@ -61,7 +61,7 @@ export class SlackClient {
 
     return {
       ok: true,
-      channels: channels,
+      channels,
       response_metadata: { next_cursor: "" },
     };
   }

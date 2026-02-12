@@ -16,6 +16,9 @@
 | DD-004 | Decision | MCP SDK pinned to exact 1.15.1 (no caret) per red team finding | 1 | Accepted |
 | DS-001 | Discovery | Upstream index.ts is 664 lines, not 550 as estimated in build plan | 1 | Noted |
 | DS-002 | Discovery | auth.test requires no additional scopes beyond SLACK_BOT_TOKEN | 1 | Noted |
+| DD-005 | Decision | resolveIdentity takes config as parameter (not module state) for testability | 2 | Accepted |
+| DD-006 | Decision | PostMessageOptions includes full spec fields (unfurl, blocks, metadata) for forward compatibility | 2 | Accepted |
+| DD-007 | Decision | postReply delegates to postMessage with thread_ts (removes duplicate fetch call) | 2 | Accepted |
 
 ## Deferred Issues
 | Issue | Assigned Phase | What Breaks |
@@ -29,3 +32,8 @@
 | 1-w3 | ce1d336 | — |
 | 1-shorten | 0a19ee3 | — |
 | 1 | — | v0.1.0-phase-1 |
+| 2-w1 | 5badbcc | — |
+| 2-w2 | 2a553dd | — |
+| 2-w3 | f250567 | — |
+| 2-shorten | 5589d5e | — |
+| 2-review | 7c5d37d | — |

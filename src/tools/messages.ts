@@ -21,9 +21,10 @@ export function registerMessageTools(
         username: z.string().optional().describe("Display name override (requires chat:write.customize)"),
         icon_emoji: z.string().optional().describe("Emoji icon override, e.g. ':robot_face:'"),
         icon_url: z.string().optional().describe("URL to image for icon override"),
+        priority: z.number().optional().default(2).describe("Message priority for rate limit queue: 0=urgent, 1=decision, 2=normal, 3=background"),
       },
     },
-    async ({ channel_id, text, agent_id, username, icon_emoji, icon_url }) => {
+    async ({ channel_id, text, agent_id, username, icon_emoji, icon_url, priority }) => {
       const identity = resolveIdentity({ agent_id, username, icon_emoji, icon_url }, config);
 
       const response = await client.postMessage({
@@ -34,7 +35,7 @@ export function registerMessageTools(
           icon_emoji: identity.icon_emoji,
           icon_url: identity.icon_url,
         }),
-      });
+      }, priority);
 
       return {
         content: [{ type: "text", text: JSON.stringify(response) }],
@@ -55,9 +56,10 @@ export function registerMessageTools(
         username: z.string().optional().describe("Display name override (requires chat:write.customize)"),
         icon_emoji: z.string().optional().describe("Emoji icon override, e.g. ':robot_face:'"),
         icon_url: z.string().optional().describe("URL to image for icon override"),
+        priority: z.number().optional().default(2).describe("Message priority for rate limit queue: 0=urgent, 1=decision, 2=normal, 3=background"),
       },
     },
-    async ({ channel_id, thread_ts, text, agent_id, username, icon_emoji, icon_url }) => {
+    async ({ channel_id, thread_ts, text, agent_id, username, icon_emoji, icon_url, priority }) => {
       const identity = resolveIdentity({ agent_id, username, icon_emoji, icon_url }, config);
 
       const response = await client.postReply(
@@ -67,6 +69,7 @@ export function registerMessageTools(
         identity?.username,
         identity?.icon_emoji,
         identity?.icon_url,
+        priority,
       );
 
       return {

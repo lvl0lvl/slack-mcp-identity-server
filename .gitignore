@@ -137,6 +137,7 @@ jest_*
 # Slack specific
 slack-config.json
 .slack/
+*.jsonl
 
 # MCP specific
 mcp-config.json

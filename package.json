@@ -1,42 +1,38 @@
 {
-  "name": "@zencoderai/slack-mcp-server",
-  "version": "0.0.0-dev",
-  "description": "MCP server for interacting with Slack",
+  "name": "slack-mcp-identity-server",
+  "version": "0.1.0",
+  "description": "MCP server for Slack with per-message agent identity switching, rate limiting, and message logging",
   "license": "MIT",
-  "author": "Zencoder AI (https://zencoder.ai)",
-  "homepage": "https://zencoder.ai",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/zencoderai/slack-mcp-server"
-  },
-  "bugs": "https://github.com/zencoderai/slack-mcp-server/issues",
   "type": "module",
   "bin": {
-    "slack-mcp": "dist/index.js"
+    "slack-mcp-identity-server": "./dist/index.js"
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist/"
   ],
   "scripts": {
-    "build": "tsc && shx chmod +x dist/*.js",
-    "watch": "tsc --watch",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest",
-    "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
-    "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage"
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.15.1",
-    "express": "^5.1.0",
     "zod": "^3.22.4"
   },
+  "optionalDependencies": {
+    "express": "^5.1.0"
+  },
   "devDependencies": {
-    "@jest/globals": "^30.0.4",
     "@types/express": "^4.17.21",
-    "@types/jest": "^30.0.0",
     "@types/node": "^24",
-    "jest": "^30.0.4",
-    "shx": "^0.4.0",
-    "ts-jest": "^29.4.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

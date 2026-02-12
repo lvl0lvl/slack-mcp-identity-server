@@ -1,0 +1,18 @@
+{
+  "$schema": "./agent-identity-schema.json",
+  "version": "1.0",
+  "defaultIdentity": {
+    "username": "Bot",
+    "icon_emoji": ":robot_face:"
+  },
+  "agents": {
+    "agent-alpha": {
+      "username": "Alpha",
+      "icon_emoji": ":large_blue_circle:"
+    },
+    "agent-beta": {
+      "username": "Beta",
+      "icon_emoji": ":large_green_circle:"
+    }
+  }
+}

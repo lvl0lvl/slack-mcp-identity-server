@@ -38,3 +38,34 @@ export interface GetUsersArgs {
 export interface GetUserProfileArgs {
   user_id: string;
 }
+
+export interface AgentIdentity {
+  username: string;
+  icon_emoji?: string;
+  icon_url?: string;
+  color?: string;
+  role?: string;
+}
+
+export interface AgentConfig {
+  version: string;
+  defaultIdentity: AgentIdentity;
+  agents: Record<string, AgentIdentity>;
+}
+
+export interface PostMessageOptions {
+  channel_id: string;
+  text: string;
+  thread_ts?: string;
+  reply_broadcast?: boolean;
+  username?: string;
+  icon_emoji?: string;
+  icon_url?: string;
+  metadata?: {
+    event_type: string;
+    event_payload: Record<string, unknown>;
+  };
+  unfurl_links?: boolean;
+  unfurl_media?: boolean;
+  blocks?: unknown[];
+}

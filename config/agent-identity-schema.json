@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agent Identity Configuration",
+  "description": "Maps agent IDs to Slack display identities. The server uses this to resolve per-message username and icon overrides.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "defaultIdentity": {
+      "$ref": "#/$defs/identity",
+      "description": "Fallback identity used when no agent_id matches and no explicit username is provided."
+    },
+    "agents": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/identity"
+      },
+      "description": "Map of agent_id strings to identity objects. Keys are arbitrary — the consumer defines them."
+    }
+  },
+  "required": ["version", "defaultIdentity", "agents"],
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "Slack display name for this agent. Will be shown as the message author when chat:write.customize scope is granted."
+        },
+        "icon_emoji": {
+          "type": "string",
+          "description": "Emoji to use as avatar, e.g. ':robot_face:'. Mutually exclusive with icon_url at the Slack API level."
+        },
+        "icon_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to an image to use as avatar. Mutually exclusive with icon_emoji at the Slack API level."
+        },
+        "color": {
+          "type": "string",
+          "description": "Informational only. Not used by the server. Consumers may use this for UI purposes."
+        },
+        "role": {
+          "type": "string",
+          "description": "Informational only. Not used by the server. Consumers may use this for documentation."
+        }
+      },
+      "required": ["username"]
+    }
+  }
+}

@@ -31,6 +31,7 @@
 | DD-017 | Decision | Logger injected into SlackClient via constructor (optional, defaults to no-op) for testability | 5 | Accepted |
 | DD-018 | Decision | Logging happens in postMessage only (postReply delegates to postMessage, so both are captured) | 5 | Accepted |
 | DD-019 | Decision | Log entries use username/icon_emoji from PostMessageOptions (resolved identity), not raw agent_id | 5 | Accepted |
+| DD-020 | Decision | Kept DD-013 per-call userToken approach (no constructor change). SLACK_USER_TOKEN wiring already done in Phase 5. Phase 6 adds test coverage only. | 6 | Accepted |
 
 ## Deferred Issues
 | Issue | Assigned Phase | What Breaks |
@@ -66,3 +67,5 @@
 | 5-w3 | 8d8c0f7 | — |
 | 5-review | 0ba50e2 | — |
 | 5 | — | v0.1.0-phase-5 |
+| 6-w1 | 2c5a14e | — |
+| 6 | — | v0.1.0-phase-6 |

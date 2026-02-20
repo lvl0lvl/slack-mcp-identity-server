@@ -44,6 +44,24 @@ export function registerChannelTools(server: McpServer, client: SlackClient): vo
   );
 
   server.registerTool(
+    "slack_invite_to_channel",
+    {
+      title: "Invite Users to Channel",
+      description: "Invite one or more users to a public or private Slack channel",
+      inputSchema: {
+        channel_id: z.string().describe("Channel ID to invite users to"),
+        user_ids: z.array(z.string()).min(1).describe("Array of user IDs to invite"),
+      },
+    },
+    async ({ channel_id, user_ids }) => {
+      const response = await client.inviteToChannel(channel_id, user_ids);
+      return {
+        content: [{ type: "text", text: JSON.stringify(response) }],
+      };
+    }
+  );
+
+  server.registerTool(
     "slack_archive_channel",
     {
       title: "Archive Slack Channel",

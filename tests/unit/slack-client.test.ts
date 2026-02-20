@@ -294,6 +294,30 @@ describe("SlackClient", () => {
     );
   });
 
+  it("inviteToChannel sends correct body with comma-joined user IDs", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ ok: true, channel: { id: "C123" } }),
+    );
+
+    const result = await client.inviteToChannel("C123", ["U111", "U222", "U333"]);
+
+    expect(result).toEqual({ ok: true, channel: { id: "C123" } });
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://slack.com/api/conversations.invite",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer xoxb-test-token",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          channel: "C123",
+          users: "U111,U222,U333",
+        }),
+      },
+    );
+  });
+
   describe("searchMessages", () => {
     it("returns error when no user token provided", async () => {
       const result = await client.searchMessages("test query");

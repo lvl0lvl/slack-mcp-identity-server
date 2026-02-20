@@ -250,6 +250,28 @@ describe("Phase 4 new tools — SlackClient methods", () => {
     });
   });
 
+  describe("inviteToChannel", () => {
+    it("calls inviteToChannel with correct args", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockResponse({ ok: true, channel: { id: "C123" } }),
+      );
+
+      const result = await client.inviteToChannel("C123", ["U111", "U222"]);
+
+      expect(result.ok).toBe(true);
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://slack.com/api/conversations.invite",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            channel: "C123",
+            users: "U111,U222",
+          }),
+        }),
+      );
+    });
+  });
+
   describe("searchMessages", () => {
     it("returns error when no user token provided", async () => {
       const result = await client.searchMessages("test query");

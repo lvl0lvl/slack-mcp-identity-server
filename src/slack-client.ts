@@ -269,6 +269,21 @@ export class SlackClient {
     );
   }
 
+  async inviteToChannel(channel_id: string, user_ids: string[]): Promise<any> {
+    return this.apiCall(
+      "conversations.invite",
+      "https://slack.com/api/conversations.invite",
+      {
+        method: "POST",
+        headers: this.botHeaders,
+        body: JSON.stringify({
+          channel: channel_id,
+          users: user_ids.join(","),
+        }),
+      },
+    );
+  }
+
   async archiveChannel(channel_id: string): Promise<any> {
     return this.apiCall(
       "conversations.archive",
